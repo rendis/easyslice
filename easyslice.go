@@ -1,14 +1,14 @@
 package easyslice
 
-type IEasy interface {
+type IEasySlice interface {
 	IMap
 	IFilter
 	IConsumerEasy
 	ICollectors
 }
 
-type IExtendedEasy interface {
-	IEasy
+type IExtendedEasySlice interface {
+	IEasySlice
 	IDependentsClosers
 }
 
@@ -24,11 +24,11 @@ type IConsumerEasy interface {
 }
 
 type IMap interface {
-	Map(TMapper) IEasy
+	Map(TMapper) IEasySlice
 }
 
 type IFilter interface {
-	Filter(TPredicate) IExtendedEasy
+	Filter(TPredicate) IExtendedEasySlice
 }
 
 type IFindAny interface {
