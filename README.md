@@ -1,2 +1,2 @@
-# easystream
-Easy slice processing via stream
+# easyslice
+Process slices like stream (but still slice)
