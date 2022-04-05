@@ -15,12 +15,12 @@ type linkInfo struct {
 	operation link
 }
 
-func EasyOf(collection TCollection) IEasySlice {
+func EasyOf(collection TCollection) IRootEasySlice {
 	return &EasySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: false}
 }
 
-func EasyOfParallel(collection TCollection) IEasySlice {
-	return &EasySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: true}
+func EasyOfParallel(collection TCollection) IRootEasySlice {
+	return &EasySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: false}
 }
 
 func (s *EasySlice) Filter(predicate TPredicate) IExtendedEasySlice {
@@ -28,7 +28,7 @@ func (s *EasySlice) Filter(predicate TPredicate) IExtendedEasySlice {
 	return s
 }
 
-func (s *EasySlice) Map(mapper TMapper) IEasySlice {
+func (s *EasySlice) Map(mapper TMapper) ISimpleEasySlice {
 	s.links = append(s.links, linkInfo{lType: linkMapper, operation: mapper})
 	return s
 }

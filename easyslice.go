@@ -1,14 +1,18 @@
 package easyslice
 
-type IEasySlice interface {
+type IRootEasySlice interface {
 	IMap
 	IFilter
+}
+
+type ISimpleEasySlice interface {
+	IRootEasySlice
 	IConsumerEasy
 	ICollectors
 }
 
 type IExtendedEasySlice interface {
-	IEasySlice
+	ISimpleEasySlice
 	IDependentsClosers
 }
 
@@ -24,7 +28,7 @@ type IConsumerEasy interface {
 }
 
 type IMap interface {
-	Map(TMapper) IEasySlice
+	Map(TMapper) ISimpleEasySlice
 }
 
 type IFilter interface {
