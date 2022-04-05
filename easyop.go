@@ -19,7 +19,7 @@ func EasyOf(collection TCollection) IRootEasySlice {
 	return &easySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: false}
 }
 
-func EasyOfParallel(collection TCollection) IRootEasySlice {
+func ParallelEasyOf(collection TCollection) IRootEasySlice {
 	return &easySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: false}
 }
 
