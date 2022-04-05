@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-func sCollectToList(s *EasySlice, o interface{}) {
+func sCollectToList(s *easySlice, o interface{}) {
 	fn := chainLinks(s.links)
 	r := reflect.ValueOf(o)
 	r.Elem().Set(reflect.MakeSlice(r.Elem().Type(), 0, 0))
@@ -17,7 +17,7 @@ func sCollectToList(s *EasySlice, o interface{}) {
 	}
 }
 
-func sForEach(s *EasySlice, consumer TConsumer) {
+func sForEach(s *easySlice, consumer TConsumer) {
 	fn := chainLinks(s.links)
 	for i := 0; i < s.collection.Len(); i++ {
 		f, v := fn(s.collection.Index(i).Interface())
@@ -27,7 +27,7 @@ func sForEach(s *EasySlice, consumer TConsumer) {
 	}
 }
 
-func sFindFirst(s *EasySlice) IOptional {
+func sFindFirst(s *easySlice) IOptional {
 	fn := chainLinks(s.links)
 	for i := 0; i < s.collection.Len(); i++ {
 		f, v := fn(s.collection.Index(i).Interface())
@@ -38,7 +38,7 @@ func sFindFirst(s *EasySlice) IOptional {
 	return &Optional{nil, false}
 }
 
-func sFindAny(s *EasySlice) IOptional {
+func sFindAny(s *easySlice) IOptional {
 	fn := chainLinks(s.links)
 	workersCh := make(chan struct{}, getNumWorkers())
 	successCh := make(chan interface{}, 1)
@@ -76,7 +76,7 @@ func sFindAny(s *EasySlice) IOptional {
 	return &Optional{nil, false}
 }
 
-func sAllMatch(s *EasySlice) bool {
+func sAllMatch(s *easySlice) bool {
 	fn := chainLinks(s.links)
 	workersCh := make(chan struct{}, getNumWorkers())
 	failCh := make(chan struct{}, 1)
@@ -114,7 +114,7 @@ func sAllMatch(s *EasySlice) bool {
 	return true
 }
 
-func sAnyMatch(s *EasySlice) bool {
+func sAnyMatch(s *easySlice) bool {
 	fn := chainLinks(s.links)
 	workersCh := make(chan struct{}, getNumWorkers())
 	successCh := make(chan struct{}, 1)
