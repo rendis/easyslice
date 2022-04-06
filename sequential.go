@@ -6,32 +6,28 @@ import (
 )
 
 func sCollectToList(s *easySlice, o interface{}) {
-	fn := chainLinks(s.links)
-	r := reflect.ValueOf(o)
-	r.Elem().Set(reflect.MakeSlice(r.Elem().Type(), 0, 0))
+	reflectedSlice := reflect.ValueOf(o)
+	reflectedSlice.Elem().Set(reflect.MakeSlice(reflectedSlice.Elem().Type(), 0, 0))
+	actualIndex := 0
 	for i := 0; i < s.collection.Len(); i++ {
-		f, v := fn(s.collection.Index(i).Interface())
-		if f {
-			r.Elem().Set(reflect.Append(r.Elem(), reflect.ValueOf(v)))
+		if f, v := s.evaluate(i); f {
+			reflectedSlice.Elem().Set(reflect.Append(reflectedSlice.Elem(), reflect.ValueOf(v)))
+			actualIndex++
 		}
 	}
 }
 
 func sForEach(s *easySlice, consumer TConsumer) {
-	fn := chainLinks(s.links)
 	for i := 0; i < s.collection.Len(); i++ {
-		f, v := fn(s.collection.Index(i).Interface())
-		if f {
+		if f, v := s.evaluate(i); f {
 			consumer(v)
 		}
 	}
 }
 
 func sFindFirst(s *easySlice) IOptional {
-	fn := chainLinks(s.links)
 	for i := 0; i < s.collection.Len(); i++ {
-		f, v := fn(s.collection.Index(i).Interface())
-		if f {
+		if f, v := s.evaluate(i); f {
 			return &Optional{v, true}
 		}
 	}
@@ -39,7 +35,6 @@ func sFindFirst(s *easySlice) IOptional {
 }
 
 func sFindAny(s *easySlice) IOptional {
-	fn := chainLinks(s.links)
 	workersCh := make(chan struct{}, getNumWorkers())
 	successCh := make(chan interface{}, 1)
 	defer close(workersCh)
@@ -57,8 +52,7 @@ func sFindAny(s *easySlice) IOptional {
 					<-workersCh
 					wg.Done()
 				}()
-				f, v := fn(s.collection.Index(i).Interface())
-				if f {
+				if f, v := s.evaluate(i); f {
 					select {
 					case successCh <- v:
 					default:
@@ -77,7 +71,6 @@ func sFindAny(s *easySlice) IOptional {
 }
 
 func sAllMatch(s *easySlice) bool {
-	fn := chainLinks(s.links)
 	workersCh := make(chan struct{}, getNumWorkers())
 	failCh := make(chan struct{}, 1)
 	defer close(workersCh)
@@ -95,8 +88,7 @@ func sAllMatch(s *easySlice) bool {
 					<-workersCh
 					wg.Done()
 				}()
-				f, _ := fn(s.collection.Index(i).Interface())
-				if !f {
+				if f, _ := s.evaluate(i); !f {
 					select {
 					case failCh <- struct{}{}:
 					default:
@@ -115,39 +107,5 @@ func sAllMatch(s *easySlice) bool {
 }
 
 func sAnyMatch(s *easySlice) bool {
-	fn := chainLinks(s.links)
-	workersCh := make(chan struct{}, getNumWorkers())
-	successCh := make(chan struct{}, 1)
-	defer close(workersCh)
-	defer close(successCh)
-	var wg sync.WaitGroup
-	for i := 0; i < s.collection.Len(); i++ {
-		select {
-		case <-successCh:
-			wg.Wait()
-			return true
-		case workersCh <- struct{}{}:
-			wg.Add(1)
-			go func(i int) {
-				defer func() {
-					<-workersCh
-					wg.Done()
-				}()
-				f, _ := fn(s.collection.Index(i).Interface())
-				if f {
-					select {
-					case successCh <- struct{}{}:
-					default:
-					}
-				}
-			}(i)
-		}
-	}
-	wg.Wait()
-	select {
-	case <-successCh:
-		return true
-	default:
-	}
-	return false
+	return s.FindFirst().IsPresent()
 }

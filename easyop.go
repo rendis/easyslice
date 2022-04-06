@@ -20,7 +20,25 @@ func EasyOf(collection TCollection) IRootEasySlice {
 }
 
 func ParallelEasyOf(collection TCollection) IRootEasySlice {
-	return &easySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: false}
+	return &easySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: true}
+}
+
+func (s *easySlice) evaluate(index int) (b bool, v interface{}) {
+	v = s.collection.Index(index).Interface()
+	b = true
+	for _, l := range s.links {
+		switch l.lType {
+		case linkPredicate:
+			if !l.operation.(TPredicate)(v) {
+				b = false
+				return
+			}
+		case linkMapper:
+			v = l.operation.(TMapper)(v)
+		}
+	}
+	return
+
 }
 
 func (s *easySlice) Filter(predicate TPredicate) IExtendedEasySlice {
@@ -34,8 +52,12 @@ func (s *easySlice) Map(mapper TMapper) ISimpleEasySlice {
 }
 
 func (s *easySlice) CollectToList(o interface{}) {
-	// TODO: o validations
-	sCollectToList(s, o)
+	// TODO: 'o' validations
+	if s.parallelProcessing {
+		pCollectToList(s, o)
+	} else {
+		sCollectToList(s, o)
+	}
 }
 
 func (s *easySlice) ForEach(consumer TConsumer) {

@@ -19,7 +19,7 @@ func getNumWorkers() int {
 	coreOnce.Do(func() {
 		coreInstance = &core{
 			cpuNum:        runtime.NumCPU(),
-			cpuMultiplier: 2,
+			cpuMultiplier: 1,
 		}
 	})
 	return coreInstance.cpuNum * coreInstance.cpuMultiplier
