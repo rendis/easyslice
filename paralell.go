@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-func pCollectToList(s *easySlice, o interface{}) {
+func pCollectToSlice(s *easySlice, o interface{}) {
 	workerNum := getNumWorkers()
 	subSliceSize := s.collection.Len() / workerNum
 	var wg sync.WaitGroup

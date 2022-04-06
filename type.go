@@ -8,9 +8,9 @@ type TConsumer func(interface{})
 
 type TCollection interface{}
 
-type link interface{}
+type TPtrSlice interface{}
 
-type fnLink func(v interface{}) (bool, interface{})
+type link interface{}
 
 type linkType int8
 

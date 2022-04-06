@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-func sCollectToList(s *easySlice, o interface{}) {
+func sCollectToSlice(s *easySlice, o interface{}) {
 	reflectedSlice := reflect.ValueOf(o)
 	reflectedSlice.Elem().Set(reflect.MakeSlice(reflectedSlice.Elem().Type(), 0, 0))
 	actualIndex := 0

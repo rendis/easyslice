@@ -56,5 +56,5 @@ type IForEach interface {
 }
 
 type ICollectors interface {
-	CollectToList(interface{})
+	CollectToSlice(TPtrSlice)
 }

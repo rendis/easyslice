@@ -16,10 +16,12 @@ type linkInfo struct {
 }
 
 func EasyOf(collection TCollection) IRootEasySlice {
+	checkTCollection(collection)
 	return &easySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: false}
 }
 
 func ParallelEasyOf(collection TCollection) IRootEasySlice {
+	checkTCollection(collection)
 	return &easySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: true}
 }
 
@@ -51,17 +53,16 @@ func (s *easySlice) Map(mapper TMapper) ISimpleEasySlice {
 	return s
 }
 
-func (s *easySlice) CollectToList(o interface{}) {
-	// TODO: 'o' validations
+func (s *easySlice) CollectToSlice(slice TPtrSlice) {
+	checkTSlice(slice)
 	if s.parallelProcessing {
-		pCollectToList(s, o)
+		pCollectToSlice(s, slice)
 	} else {
-		sCollectToList(s, o)
+		sCollectToSlice(s, slice)
 	}
 }
 
 func (s *easySlice) ForEach(consumer TConsumer) {
-	// TODO: 'o' validations
 	if s.parallelProcessing {
 		pForEach(s, consumer)
 	} else {
