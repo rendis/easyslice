@@ -3,7 +3,6 @@ package easyslice
 import (
 	"reflect"
 	"sync"
-	"sync/atomic"
 )
 
 func pCollectToList(s *easySlice, o interface{}) {
@@ -41,10 +40,11 @@ func pCollectToList(s *easySlice, o interface{}) {
 }
 
 func pForEach(s *easySlice, consumer TConsumer) {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	workerNum := getNumWorkers()
 	subSliceSize := s.collection.Len() / workerNum
-	var wg sync.WaitGroup
-
 	if subSliceSize == 0 {
 		subSliceSize = 1
 		workerNum = s.collection.Len()
@@ -64,107 +64,17 @@ func pForEach(s *easySlice, consumer TConsumer) {
 			}
 		}(start, end)
 	}
-	wg.Wait()
 }
 
 func pAllMatch(s *easySlice) bool {
-	workerNum := 1
-	subSliceSize := s.collection.Len() / workerNum
 	var wg sync.WaitGroup
-	var failedChan = make(chan struct{}, 1)
-	defer func() {
-		close(failedChan)
-	}()
-
-	if subSliceSize == 0 {
-		subSliceSize = 1
-		workerNum = s.collection.Len()
-	}
-
-	var exitFlag int32 = 0
-	for i := 0; i < workerNum; i++ {
-		start := i * subSliceSize
-		end := start + subSliceSize
-		wg.Add(1)
-		go func(start, end int) {
-			defer wg.Done()
-			for j := start; j < end; j++ {
-				if exitFlag > 0 {
-					return
-				}
-				f, _ := s.evaluate(j)
-				if !f {
-					select {
-					case failedChan <- struct{}{}:
-						atomic.AddInt32(&exitFlag, 1)
-					default:
-					}
-					return
-				}
-			}
-		}(start, end)
-	}
-	wg.Wait()
-	select {
-	case <-failedChan:
-		return false
-	default:
-		return true
-	}
-}
-
-func pAnyMatch(s *easySlice) bool {
-	workerNum := getNumWorkers() * 10
-	subSliceSize := s.collection.Len() / workerNum
-	var wg sync.WaitGroup
-
-	if subSliceSize == 0 {
-		subSliceSize = 1
-		workerNum = s.collection.Len()
-	}
-
-	var exitFlag uint32 = 0
-	for i := 0; i < workerNum; i++ {
-		start := i * subSliceSize
-		end := start + subSliceSize
-		wg.Add(1)
-		go func(start, end int) {
-			defer wg.Done()
-			for j := start; j < end; j++ {
-				if exitFlag > 0 {
-					return
-				}
-				f, _ := s.evaluate(j)
-				if f {
-					atomic.AddUint32(&exitFlag, 1)
-					return
-				}
-			}
-		}(start, end)
-	}
-	wg.Wait()
-	if exitFlag > 0 {
-		return true
-	}
-	return false
-}
-
-func pFindAny(s *easySlice) IOptional {
 	workerNum := getNumWorkers()
 	subSliceSize := s.collection.Len() / workerNum
-	var wg sync.WaitGroup
-	var foundChan = make(chan interface{}, 1)
-	var closeChan = make(chan struct{}, 1)
-	defer func() {
-		close(closeChan)
-		close(foundChan)
-	}()
-
 	if subSliceSize == 0 {
 		subSliceSize = 1
 		workerNum = s.collection.Len()
 	}
-
+	closer := NewCloser()
 	wg.Add(workerNum)
 	for i := 0; i < workerNum; i++ {
 		start := i * subSliceSize
@@ -173,15 +83,84 @@ func pFindAny(s *easySlice) IOptional {
 			defer wg.Done()
 			for j := start; j < end; j++ {
 				select {
-				case <-closeChan:
-					closeChan <- struct{}{}
+				case <-closer.Done():
 					return
 				default:
-					f, v := s.evaluate(j)
-					if f {
+					if f, _ := s.evaluate(j); !f {
+						closer.Close()
+						return
+					}
+				}
+			}
+		}(start, end)
+	}
+	wg.Wait()
+	return !closer.Status()
+}
+
+func pAnyMatch(s *easySlice) bool {
+	var wg sync.WaitGroup
+	workerNum := getNumWorkers()
+	subSliceSize := s.collection.Len() / workerNum
+	if subSliceSize == 0 {
+		subSliceSize = 1
+		workerNum = s.collection.Len()
+	}
+
+	closer := NewCloser()
+	wg.Add(workerNum)
+	for i := 0; i < workerNum; i++ {
+		start := i * subSliceSize
+		end := start + subSliceSize
+		go func(start, end int) {
+			defer wg.Done()
+			for j := start; j < end; j++ {
+				select {
+				case <-closer.Done():
+					return
+				default:
+					if f, _ := s.evaluate(j); f {
+						closer.Close()
+						return
+					}
+				}
+			}
+		}(start, end)
+	}
+	wg.Wait()
+	return closer.Status()
+}
+
+func pFindAny(s *easySlice) IOptional {
+	var wg sync.WaitGroup
+	var foundChan = make(chan interface{}, 1)
+	defer func() {
+		close(foundChan)
+	}()
+
+	workerNum := getNumWorkers()
+	subSliceSize := s.collection.Len() / workerNum
+	if subSliceSize == 0 {
+		subSliceSize = 1
+		workerNum = s.collection.Len()
+	}
+
+	closer := NewCloser()
+	wg.Add(workerNum)
+	for i := 0; i < workerNum; i++ {
+		start := i * subSliceSize
+		end := start + subSliceSize
+		go func(start, end int) {
+			defer wg.Done()
+			for j := start; j < end; j++ {
+				select {
+				case <-closer.Done():
+					return
+				default:
+					if f, v := s.evaluate(j); f {
 						select {
 						case foundChan <- v:
-							closeChan <- struct{}{}
+							closer.Close()
 						default:
 						}
 						return
