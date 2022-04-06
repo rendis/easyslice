@@ -6,8 +6,7 @@ import (
 )
 
 type core struct {
-	cpuNum        int
-	cpuMultiplier int
+	numWorkers int
 }
 
 var (
@@ -18,18 +17,20 @@ var (
 func getNumWorkers() int {
 	coreOnce.Do(func() {
 		coreInstance = &core{
-			cpuNum:        runtime.NumCPU(),
-			cpuMultiplier: 1,
+			numWorkers: runtime.NumCPU(),
 		}
 	})
-	return coreInstance.cpuNum * coreInstance.cpuMultiplier
+	return coreInstance.numWorkers
 }
 
-func SetCoreMultiplier(multiplier int) {
+func SetCoreMultiplier(multiplier float32) {
 	coreOnce.Do(func() {
+		nw := int(float32(runtime.NumCPU()) * multiplier)
+		if nw < 1 {
+			nw = 1
+		}
 		coreInstance = &core{
-			cpuNum:        runtime.NumCPU(),
-			cpuMultiplier: multiplier,
+			numWorkers: nw,
 		}
 	})
 }
