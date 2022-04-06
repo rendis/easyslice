@@ -61,7 +61,12 @@ func (s *easySlice) CollectToList(o interface{}) {
 }
 
 func (s *easySlice) ForEach(consumer TConsumer) {
-	sForEach(s, consumer)
+	// TODO: 'o' validations
+	if s.parallelProcessing {
+		pForEach(s, consumer)
+	} else {
+		sForEach(s, consumer)
+	}
 }
 
 func (s *easySlice) FindFirst() IOptional {
@@ -69,13 +74,13 @@ func (s *easySlice) FindFirst() IOptional {
 }
 
 func (s *easySlice) FindAny() IOptional {
-	return sFindAny(s)
+	return pFindAny(s)
 }
 
 func (s *easySlice) AllMatch() bool {
-	return sAllMatch(s)
+	return pAllMatch(s)
 }
 
 func (s *easySlice) AnyMatch() bool {
-	return sAnyMatch(s)
+	return pAnyMatch(s)
 }
