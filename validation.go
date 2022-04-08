@@ -7,8 +7,8 @@ import (
 
 func checkTCollection(t TCollection) {
 	r := reflect.TypeOf(t)
-	if r.Kind() != reflect.Slice {
-		panic(fmt.Sprintf("EasySlice: TCollection must be a slice, got '%v' (%v)", r.Kind(), t))
+	if r.Kind() != reflect.Slice && r.Kind() != reflect.Array && r.Kind() != reflect.Map {
+		panic(fmt.Sprintf("EasySlice: TCollection must be a [slice | array ], got '%v' (%v)", r.Kind(), t))
 	}
 }
 

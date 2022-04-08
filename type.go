@@ -14,6 +14,11 @@ type link interface{}
 
 type linkType int8
 
+type Pair struct {
+	Key   interface{}
+	Value interface{}
+}
+
 const (
 	linkPredicate linkType = iota
 	linkMapper

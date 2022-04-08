@@ -15,13 +15,29 @@ type linkInfo struct {
 	operation link
 }
 
-func EasyOf(collection TCollection) IRootEasySlice {
+// EasyOf returns a new sequential EasySlice instance.
+// mapToSlice
+//  - false:  convert map to a slice of its values (default is false)
+//  - true: convert map to slice of Pair
+func EasyOf(collection TCollection, mapToPair ...bool) IRootEasySlice {
 	checkTCollection(collection)
-	return &easySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: false}
+	v := reflect.ValueOf(collection)
+	if v.Kind() == reflect.Map {
+		v = mapToCollection(v, mapToPair)
+	}
+	return &easySlice{collection: v, links: make([]linkInfo, 0), parallelProcessing: false}
 }
 
-func ParallelEasyOf(collection TCollection) IRootEasySlice {
+// ParallelEasyOf returns a new parallel EasySlice instance.
+// mapToSlice
+//  - false:  convert map to a slice of its values (default is false)
+//  - true: convert map to slice of Pair
+func ParallelEasyOf(collection TCollection, mapToPair ...bool) IRootEasySlice {
 	checkTCollection(collection)
+	v := reflect.ValueOf(collection)
+	if v.Kind() == reflect.Map {
+		v = mapToCollection(v, mapToPair)
+	}
 	return &easySlice{collection: reflect.ValueOf(collection), links: make([]linkInfo, 0), parallelProcessing: true}
 }
 
@@ -84,4 +100,19 @@ func (s *easySlice) AllMatch() bool {
 
 func (s *easySlice) AnyMatch() bool {
 	return pAnyMatch(s)
+}
+
+func mapToCollection(v reflect.Value, mapToPair []bool) reflect.Value {
+	var r []interface{}
+	iterator := v.MapRange()
+	if len(mapToPair) == 0 || !mapToPair[0] {
+		for iterator.Next() {
+			r = append(r, iterator.Value().Interface())
+		}
+	} else {
+		for iterator.Next() {
+			r = append(r, Pair{Key: iterator.Key().Interface(), Value: iterator.Value().Interface()})
+		}
+	}
+	return reflect.ValueOf(r)
 }

@@ -6,16 +6,17 @@ import (
 )
 
 func pCollectToSlice(s *easySlice, o interface{}) {
+	var wg sync.WaitGroup
+	wg.Wait()
+
 	workerNum := getNumWorkers()
 	subSliceSize := s.collection.Len() / workerNum
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-
 	if subSliceSize == 0 {
 		subSliceSize = 1
 		workerNum = s.collection.Len()
 	}
 
+	var lock sync.Mutex
 	reflectedSlice := reflect.ValueOf(o)
 	reflectedSlice.Elem().Set(reflect.MakeSlice(reflectedSlice.Elem().Type(), 0, 0))
 	wg.Add(workerNum)
@@ -36,7 +37,6 @@ func pCollectToSlice(s *easySlice, o interface{}) {
 			lock.Unlock()
 		}(start, end)
 	}
-	wg.Wait()
 }
 
 func pForEach(s *easySlice, consumer TConsumer) {
